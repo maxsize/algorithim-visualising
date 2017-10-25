@@ -98,15 +98,44 @@ export class MazeGeneratorComponent implements AfterViewInit
         {
             // no more available adjacent cell found, put current cell to found array
             let last = this.path.pop();
-            this.found.push(last);
-            console.log("found end", last);
+            if (this.found.length > 0)
+            {
+                let from = this.found[this.found.length - 1];
+                this.crave(from, last);
+            }
             this.drawCell(last, "#ffffff")
+            this.found.push(last);
         }
         if (this.path.length == 0)
         {
             // no more empty cell available, end process
             clearInterval(this.timer);
         }
+    }
+
+    private crave(from:Point, to:Point) {
+        let x, y, width, height;
+        if (from.x == to.x)
+        {
+            // craving horizontally
+            let p = from.x > to.x ? from : to;
+            x = p.x * this.CELL_SIZE - 2;
+            y = p.y * this.CELL_SIZE + 1;
+            width = 2;
+            height = this.CELL_SIZE - 2;
+        }
+        else
+        {
+            let p = from.y > to.y ? from : to;
+            x = p.x * this.CELL_SIZE + 1;
+            y = p.y * this.CELL_SIZE - 2;
+            width = this.CELL_SIZE - 2;
+            height = 2;
+        }
+        let canvas:HTMLCanvasElement = this.stage.nativeElement;
+        let ctx:CanvasRenderingContext2D = canvas.getContext('2d')
+        ctx.fillStyle = "#FFFFFF";
+        ctx.fillRect(x, y, width, height);
     }
 
     private drawCell(p:Point, color:string)
