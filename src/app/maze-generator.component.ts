@@ -5,6 +5,7 @@ import { Point } from "./DataStructures";
     selector:"maze-generator",
     template:`<div>
         <h1>Maze Generator</h1>
+        <img #image src="../assets/princess.png" style="display:none"/>
         <canvas #stage width="400px" height="400px"></canvas>
         <div >
             <button (click)="draw()">Draw</button>
@@ -15,8 +16,9 @@ import { Point } from "./DataStructures";
 export class MazeGeneratorComponent implements AfterViewInit
 {
     @ViewChild('stage') stage:ElementRef;
+    @ViewChild('image') imgRef:ElementRef;
 
-    CELL_SIZE:number = 80;
+    CELL_SIZE:number = 40;
     current:Point = null;
     map:number[][] = null;
     path:Point[] = null;
@@ -73,9 +75,8 @@ export class MazeGeneratorComponent implements AfterViewInit
 
     draw()
     {
-        console.log("start drawing");
         this.init();
-        this.timer = setInterval(() => this.next(), 100);
+        this.timer = setInterval(() => this.next(), 50);
     }
 
     step()
@@ -92,45 +93,45 @@ export class MazeGeneratorComponent implements AfterViewInit
             // found available adjacent cell
             this.path.push(p);
             this.drawCell(p, "#fc9fd8");
-            console.log("empty", p);
         }
         else
         {
             // no more available adjacent cell found, put current cell to found array
             let last = this.path.pop();
-            if (this.found.length > 0)
-            {
-                let from = this.found[this.found.length - 1];
-                this.crave(from, last);
-            }
+            this.crave(this.path[this.path.length - 1], last);
             this.drawCell(last, "#ffffff")
             this.found.push(last);
         }
-        if (this.path.length == 0)
+        if (this.path.length == 1)
         {
             // no more empty cell available, end process
+            let last = this.path.pop();
+            this.drawCell(last, "#ffffff")
+            this.drawPrincess(last);
             clearInterval(this.timer);
         }
     }
 
     private crave(from:Point, to:Point) {
+        if (Math.abs(from.x - to.x) > 1 || Math.abs(from.y - to.y) > 1) return;
         let x, y, width, height;
-        if (from.x == to.x)
+        const strokeSize = 4;
+        if (from.x != to.x)
         {
             // craving horizontally
             let p = from.x > to.x ? from : to;
-            x = p.x * this.CELL_SIZE - 2;
-            y = p.y * this.CELL_SIZE + 1;
-            width = 2;
-            height = this.CELL_SIZE - 2;
+            x = p.x * this.CELL_SIZE - strokeSize;
+            y = p.y * this.CELL_SIZE + strokeSize/2;
+            width = strokeSize*2;
+            height = this.CELL_SIZE - strokeSize;
         }
         else
         {
             let p = from.y > to.y ? from : to;
-            x = p.x * this.CELL_SIZE + 1;
-            y = p.y * this.CELL_SIZE - 2;
-            width = this.CELL_SIZE - 2;
-            height = 2;
+            x = p.x * this.CELL_SIZE + strokeSize/2;
+            y = p.y * this.CELL_SIZE - strokeSize;
+            width = this.CELL_SIZE - strokeSize;
+            height = strokeSize*2;
         }
         let canvas:HTMLCanvasElement = this.stage.nativeElement;
         let ctx:CanvasRenderingContext2D = canvas.getContext('2d')
@@ -148,6 +149,15 @@ export class MazeGeneratorComponent implements AfterViewInit
         let ctx:CanvasRenderingContext2D = canvas.getContext('2d')
         ctx.fillStyle = color;
         ctx.fillRect(x, y, width, height);
+    }
+
+    private drawPrincess(p:Point) {
+        let img:HTMLImageElement = this.imgRef.nativeElement;
+        let x = p.x * this.CELL_SIZE + (this.CELL_SIZE - img.width)/2;
+        let y = p.y * this.CELL_SIZE + (this.CELL_SIZE - img.height)/2;
+        let canvas:HTMLCanvasElement = this.stage.nativeElement;
+        let ctx:CanvasRenderingContext2D = canvas.getContext('2d')
+        ctx.drawImage(img, x, y);
     }
 
     private findAdjacentEmptyCell(p:Point):Point
