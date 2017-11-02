@@ -37,7 +37,7 @@ export class BezierCurveComponent implements AfterViewInit
     dragger: Point;
     
     ngAfterViewInit(): void {
-        this.start();
+        this.init();
         this.draw();
     }
 
@@ -58,7 +58,8 @@ export class BezierCurveComponent implements AfterViewInit
         if (!this.isMouseDown || !this.dragger) return;
         this.dragger.x = e.x - this.bound.left;
         this.dragger.y = e.y - this.bound.top;
-        this.draw();
+        this.stop();
+        this.start();
     }
 
     onDragEnd(): void
@@ -67,20 +68,57 @@ export class BezierCurveComponent implements AfterViewInit
         this.dragger = null;
     }
 
-    start(): void
+    init(): void
     {
         this.anchor1 = new Point(Math.random()*this.stageWidth|0, Math.random()*this.stageHeight|0);
         this.anchor2 = new Point(Math.random()*this.stageWidth|0, Math.random()*this.stageHeight|0);
         this.joint = new Point(Math.random()*this.stageWidth|0, Math.random()*this.stageHeight|0);
     }
 
+    start(): void
+    {
+        let total: number = 2000;   // 2 sec
+        let current: number = 0;
+        let dt: number = 5;
+        let dir: number = 1;
+        let p1: Point = this.anchor1.clone();
+        let p2: Point = this.joint.clone();
+        let p3: Point = this.anchor1.clone();
+        let dx1: number = this.anchor1.x - this.joint.x;
+        let dy1: number = this.anchor1.y - this.joint.y;
+        let dx2: number = this.joint.x - this.anchor2.x;
+        let dy2: number = this.joint.y - this.anchor2.y;
+
+        this.timer = setInterval(()=>anim(), dt);
+        let anim = () => {
+            let perc = current / total;
+            p1.x = this.anchor1.x - (dx1 * perc);
+            p1.y = this.anchor1.y - (dy1 * perc);
+            p2.x = this.joint.x - (dx2 * perc);
+            p2.y = this.joint.y - (dy2 * perc);
+            p3.x = p1.x + (p2.x - p1.x) * perc;
+            p3.y = p1.y + (p2.y - p1.y) * perc;
+            this.draw();
+            this.drawDot(p1, "blue");
+            this.drawDot(p2, "blue");
+            this.drawDot(p3, "red");
+            this.drawLine(p1, p2, "silver");
+            current += dt * dir;
+            if (current > total || current < 0)
+            {
+                current = Math.max(0, Math.min(total, current));
+                dir *= -1;
+            }
+        }
+    }
+
     draw(): void
     {
         let ctx:CanvasRenderingContext2D = (this.canvas.nativeElement as HTMLCanvasElement).getContext('2d');
         ctx.clearRect(0, 0, this.stageWidth, this.stageHeight);
-        this.drawDot(this.anchor1, this.dotColor);
-        this.drawDot(this.anchor2, this.dotColor);
-        this.drawDot(this.joint, this.dotColor);
+        this.drawDot(this.anchor1, "red");
+        this.drawDot(this.anchor2, "yellow");
+        this.drawDot(this.joint, "purple");
         this.drawLine(this.joint, this.anchor1, this.lineColor);
         this.drawLine(this.joint, this.anchor2, this.lineColor);
         ctx.beginPath();
